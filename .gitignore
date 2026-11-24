@@ -1,0 +1,21 @@
+# CMake build directories
+build/
+cmake-build-*/
+
+# Compiled files
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+
+# macOS
+.DS_Store
+
+# IDE settings
+.vscode/
+.idea/
+
+# Test and coverage output
+coverage/
+Testing/
