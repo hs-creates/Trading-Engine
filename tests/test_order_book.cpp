@@ -279,3 +279,80 @@ TEST(OrderBookTests, DoesNotMatchOrdersWithIncompatiblePrices)
     EXPECT_TRUE(book.getOrder(1).has_value());
     EXPECT_TRUE(book.getOrder(2).has_value());
 }
+
+TEST(OrderBookTests, CancelOrderFromMiddleOfPriceLevel)
+{
+    OrderBook book;
+
+    // Three BUY orders at the same price
+    book.addOrder({1, Side::BUY, 10000, 10, 1});
+    book.addOrder({2, Side::BUY, 10000, 20, 2});
+    book.addOrder({3, Side::BUY, 10000, 30, 3});
+
+    ASSERT_EQ(book.getOrderCount(), 3);
+
+    // Cancel the middle order
+    EXPECT_TRUE(book.cancelOrder(2));
+
+    // Only orders 1 and 3 should remain
+    EXPECT_EQ(book.getOrderCount(), 2);
+
+    EXPECT_TRUE(book.getOrder(1).has_value());
+    EXPECT_FALSE(book.getOrder(2).has_value());
+    EXPECT_TRUE(book.getOrder(3).has_value());
+
+    EXPECT_EQ(book.getOrder(1)->quantity, 10);
+    EXPECT_EQ(book.getOrder(3)->quantity, 30);
+}
+
+
+TEST(OrderBookTests, CancelLastOrderRemovesPriceLevel)
+{
+    OrderBook book;
+
+    // Insert one BUY order
+    book.addOrder({1, Side::BUY, 10000, 50, 1});
+
+    ASSERT_EQ(book.getOrderCount(), 1);
+
+    // Cancel the only order at this price level
+    EXPECT_TRUE(book.cancelOrder(1));
+
+    // Order book should now be empty
+    EXPECT_EQ(book.getOrderCount(), 0);
+    EXPECT_FALSE(book.getOrder(1).has_value());
+
+    // Cancelling it again should fail
+    EXPECT_FALSE(book.cancelOrder(1));
+}
+
+
+TEST(OrderBookTests, PartiallyFilledOrderCanStillBeCancelled)
+{
+    OrderBook book;
+
+    // Add a SELL order for 100 units
+    book.addOrder({1, Side::SELL, 10000, 100, 1});
+
+    // Add a BUY order that consumes 40 units
+    std::vector<Trade> trades =
+        book.addOrder({2, Side::BUY, 10000, 40, 2});
+
+    // Verify that a trade occurred
+    ASSERT_EQ(trades.size(), 1);
+    EXPECT_EQ(trades[0].quantity, 40);
+
+    // SELL order should have 60 units remaining
+    auto remainingOrder = book.getOrder(1);
+
+    ASSERT_TRUE(remainingOrder.has_value());
+    EXPECT_EQ(remainingOrder->quantity, 60);
+
+    EXPECT_EQ(book.getOrderCount(), 1);
+
+    // Cancel the remaining SELL quantity
+    EXPECT_TRUE(book.cancelOrder(1));
+
+    EXPECT_EQ(book.getOrderCount(), 0);
+    EXPECT_FALSE(book.getOrder(1).has_value());
+}

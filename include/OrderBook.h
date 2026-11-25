@@ -1,26 +1,34 @@
-
 #pragma once
 
 #include "Order.h"
 #include "Trade.h"
+#include "OrderLocation.h"
 
 #include <map>
-#include <deque>
+#include <list>
 #include <functional>
 #include <vector>
+#include <unordered_map>
+#include <optional>
+#include <cstdint>
 
-class OrderBook
-{
+class OrderBook {
 private:
-    // Highest bid first
-    std::map<int64_t, std::deque<Order>,
+    std::map<int64_t, std::list<Order>,
              std::greater<int64_t>> bids;
 
-    // Lowest ask first
-    std::map<int64_t, std::deque<Order>> asks;
+    std::map<int64_t, std::list<Order>> asks;
+
+    std::unordered_map<uint64_t, OrderLocation> orderIndex;
 
 public:
     OrderBook();
 
     std::vector<Trade> addOrder(const Order& order);
+
+    bool cancelOrder(uint64_t orderId);
+
+    std::optional<Order> getOrder(uint64_t orderId) const;
+
+    std::size_t getOrderCount() const;
 };

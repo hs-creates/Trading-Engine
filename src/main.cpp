@@ -7,49 +7,43 @@ int main()
 {
     OrderBook book;
 
-    // Add a sell order:
-    // Order ID 1, £150.00, quantity 100
-    Order sellOrder{
-        1,
-        Side::SELL,
-        15000,
-        100,
-        1
-    };
+    // Add three buy orders
+    book.addOrder({1, Side::BUY, 15000, 100, 1});
+    book.addOrder({2, Side::BUY, 15000, 50, 2});
+    book.addOrder({3, Side::BUY, 14900, 75, 3});
 
-    book.addOrder(sellOrder);
+    std::cout << "Active orders: "
+              << book.getOrderCount() << '\n';
 
-    // Add a buy order:
-    // Order ID 2, £151.00, quantity 40
-    Order buyOrder{
-        2,
-        Side::BUY,
-        15100,
-        40,
-        2
-    };
+    // Retrieve order 2
+    auto order = book.getOrder(2);
 
-    std::vector<Trade> trades = book.addOrder(buyOrder);
-
-    // Display executed trades
-    for (const Trade& trade : trades)
+    if (order.has_value())
     {
-        std::cout << "Trade executed!\n";
-
-        std::cout << "Buy Order ID: "
-                  << trade.buyOrderId << '\n';
-
-        std::cout << "Sell Order ID: "
-                  << trade.sellOrderId << '\n';
+        std::cout << "Found order: "
+                  << order->id << '\n';
 
         std::cout << "Price: "
-                  << trade.price << '\n';
+                  << order->price << '\n';
 
         std::cout << "Quantity: "
-                  << trade.quantity << '\n';
-
-        std::cout << "-------------------\n";
+                  << order->quantity << '\n';
     }
+
+    // Cancel order 2
+    bool cancelled = book.cancelOrder(2);
+
+    std::cout << "Cancellation successful: "
+              << std::boolalpha << cancelled << '\n';
+
+    std::cout << "Active orders after cancellation: "
+              << book.getOrderCount() << '\n';
+
+    // Try cancelling the same order again
+    bool cancelledAgain = book.cancelOrder(2);
+
+    std::cout << "Second cancellation: "
+              << cancelledAgain << '\n';
 
     return 0;
 }
